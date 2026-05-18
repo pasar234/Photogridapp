@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Grid Editor Simpel</title>
+    <!-- Hubungkan ke html2canvas untuk fitur download -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-color: #ffffff;
+            --primary-color: #4f46e5;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Panel Kontrol/Sidebar */
+        .control-panel {
+            background: var(--card-color);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            height: fit-content;
+        }
+
+        h2 { margin-top: 0; font-size: 1.5rem; color: #111; }
+        h3 { font-size: 1.1rem; margin-bottom: 10px; color: #555; }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        /* Tombol Layout */
+        .layout-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .layout-btn {
+            background: #e5e7eb;
+            border: 2px solid transparent;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .layout-btn:hover, .layout-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* Slider */
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--primary-color);
+        }
+
+        /* Tombol Aksi */
+        .btn-download {
+            width: 100%;
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-download:hover { background: #059669; }
+
+        /* Area Preview Grid */
+        .preview-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--card-color);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            min-height: 500px;
+        }
+
+        /* Kotak Grid Utama */
+        #photo-grid {
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 1 / 1;
+            background: #ffffff;
+            display: grid;
+            gap: 10px;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+        }
+
+        /* Kotak Tempat Foto (Slot) */
+        .grid-slot {
+            background: #f3f4f6;
+            border: 2px dashed #cbd5e1;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .grid-slot:hover {
+            background: #e2e8f0;
+            border-color: var(--primary-color);
+        }
+
+        .grid-slot input[type="file"] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .grid-slot img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .upload-msg {
+            font-size: 0.85rem;
+            color: #64748b;
+            pointer-events: none;
+            text-align: center;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- PANEL KONTROL -->
+    <div class="control-panel">
+        <h2>Grid Editor 📸</h2>
+        <hr style="border: 0; border-top: 1px solid #eee; margin-bottom: 20px;">
+
+        <!-- Pilihan Grid -->
+        <div class="control-group">
+            <h3>1. Pilih Layout</h3>
+            <div class="layout-options">
+                <div class="layout-btn active" onclick="changeLayout('grid-2x2')">2 x 2</div>
+                <div class="layout-btn" onclick="changeLayout('grid-3x3')">3 x 3</div>
+                <div class="layout-btn" onclick="changeLayout('grid-1-2')">Split</div>
+            </div>
+        </div>
+
+        <!-- Jarak Foto (Gap) -->
+        <div class="control-group">
+            <div class="slider-label">
+                <span>Jarak Foto (Gap)</span>
+                <span id="gap-val">10px</span>
+            </div>
+            <input type="range" id="gap-slider" min="0" max="30" value="10" oninput="updateGridStyles()">
+        </div>
+
+        <!-- Kebulatan Sudut Foto (Border Radius) -->
+        <div class="control-group">
+            <div class="slider-label">
+                <span>Kebulatan Sudut</span>
+                <span id="radius-val">4px</span>
+            </div>
+            <input type="range" id="radius-slider" min="0" max="50" value="4" oninput="updateGridStyles()">
+        </div>
+
+        <!-- Tombol Download -->
+        <button class="btn-download" onclick="downloadGrid()">Unduh Gambar Hasil ✨</button>
+    </div>
+
+    <!-- AREA PREVIEW FOTO -->
+    <div class="preview-container">
+        <div id="photo-grid" class="grid-2x2">
+            <!-- Slot foto akan di-generate otomatis oleh JavaScript -->
+        </div>
+    </div>
+</div>
+
+<script>
+    const gridContainer = document.getElementById('photo-grid');
+    const gapSlider = document.getElementById('gap-slider');
+    const radiusSlider = document.getElementById('radius-slider');
+
+    // Struktur CSS Grid untuk masing-masing layout
+    const layouts = {
+        'grid-2x2': {
+            slots: 4,
+            style: "grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr);"
+        },
+        'grid-3x3': {
+            slots: 9,
+            style: "grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);"
+        },
+        'grid-1-2': {
+            slots: 3,
+            style: "grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr);",
+            customSlots: (i) => {
+                // Membuat slot pertama memakan 2 baris (besar di kiri)
+                if (i === 0) return "grid-row: span 2;";
+                return "";
+            }
+        }
+    };
+
+    let currentLayout = 'grid-2x2';
+
+    // Fungsi mengganti layout grid
+    function changeLayout(layoutName) {
+        currentLayout = layoutName;
+        
+        // Update status aktif tombol
+        document.querySelectorAll('.layout-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+
+        generateSlots();
+    }
+
+    // Fungsi membuat kotak upload foto berdasarkan layout yang dipilih
+    function generateSlots() {
+        gridContainer.innerHTML = '';
+        const layoutConfig = layouts[currentLayout];
+        
+        gridContainer.setAttribute('style', layoutConfig.style);
+
+        for (let i = 0; i < layoutConfig.slots; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'grid-slot';
+            
+            // Terapkan custom rule jika ada (seperti di layout Split)
+            if (layoutConfig.customSlots) {
+                slot.style.cssText += layoutConfig.customSlots(i);
+            }
+
+            slot.innerHTML = `
+                <span class="upload-msg">Klik / Drop Foto</span>
+                <input type="file" accept="image/*" onchange="previewImage(this)">
+            `;
+            gridContainer.appendChild(slot);
+        }
+        updateGridStyles();
+    }
+
+    // Fungsi menangani preview foto saat user upload gambar
+    function previewImage(input) {
+        const file = input.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const slot = input.parentElement;
+                // Hapus preview lama jika ada
+                const oldImg = slot.querySelector('img');
+                if (oldImg) oldImg.remove();
+
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                slot.appendChild(img);
+                
+                // Sembunyikan tulisan panduan upload
+                slot.querySelector('.upload-msg').style.display = 'none';
+                updateGridStyles(); // Pastikan border radius terpasang di foto baru
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Fungsi update Jarak (Gap) dan Kebulatan (Border Radius)
+    function updateGridStyles() {
+        const gap = gapSlider.value;
+        const radius = radiusSlider.value;
+
+        document.getElementById('gap-val').innerText = gap + 'px';
+        document.getElementById('radius-val').innerText = radius + 'px';
+
+        gridContainer.style.gap = gap + 'px';
+        gridContainer.style.padding = gap + 'px'; // Menyesuaikan padding luar grid
+
+        const slots = document.querySelectorAll('.grid-slot');
+        slots.forEach(slot => {
+            slot.style.borderRadius = radius + 'px';
+            const img = slot.querySelector('img');
+            if (img) img.style.borderRadius = radius + 'px';
+        });
+    }
+
+    // Fungsi Download Grid menjadi Gambar PNG
+    function downloadGrid() {
+        // Cek apakah sudah ada foto yang dimasukkan
+        const imgs = gridContainer.querySelectorAll('img');
+        if(imgs.length === 0) {
+            alert('Silakan masukkan minimal satu foto terlebih dahulu!');
+            return;
+        }
+
+        // Jalankan proses konversi html ke canvas gambar
+        html2canvas(gridContainer, {
+            useCORS: true, // mengizinkan cross-origin gambar jika ada
+            scale: 2 // Meningkatkan kualitas/resolusi gambar hasil download
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = 'my-photo-grid.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+    }
+
+    // Jalankan grid pertama kali saat halaman dimuat
+    generateSlots();
+</script>
+
+</body>
+</html>
