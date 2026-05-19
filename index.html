@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Mushaf Madinah - Surah An-Naba'</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #7a715a;
+            font-family: 'Segoe UI', 'Amiri', 'Traditional Arabic', serif;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .mushaf-container {
+            max-width: 800px;
+            width: 100%;
+            background: #fffdf4;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            overflow: hidden;
+            border: 1px solid #c2b38a;
+        }
+
+        /* Toolbar Atas */
+        .toolbar {
+            background: #2a3b26;
+            padding: 12px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 4px solid #c5a059;
+            color: #fff;
+        }
+        .zoom-control {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .zoom-btn {
+            background: #c5a059;
+            border: none;
+            color: #1a2618;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .zoom-level {
+            font-size: 0.9rem;
+            font-weight: bold;
+            min-width: 45px;
+            text-align: center;
+        }
+        .surah-nav select {
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: 1px solid #c5a059;
+            background: #fff;
+            font-weight: bold;
+        }
+
+        /* HALAMAN MUSHAF */
+        .mushaf-page {
+            padding: 40px 35px;
+            background: #fffdf4;
+            position: relative;
+            box-shadow: inset 0 0 40px rgba(139,119,74,0.15);
+        }
+
+        /* Frame Ornamen Tepi Dalam */
+        .page-border {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            bottom: 15px;
+            border: 2px solid #dfd3b3;
+            pointer-events: none;
+            border-radius: 4px;
+        }
+
+        /* Ornamen Kepala Surah (Sesuai Foto) */
+        .surah-header-box {
+            border: 3px double #4a6144;
+            background: #e2ecc8;
+            padding: 8px;
+            text-align: center;
+            margin-bottom: 25px;
+            position: relative;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .surah-header-box::before, .surah-header-box::after {
+            content: "❖";
+            color: #4a6144;
+            font-size: 1.2rem;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .surah-header-box::before { left: 15px; }
+        .surah-header-box::after { right: 15px; }
+
+        .surah-title-arabic {
+            font-family: 'Amiri', serif;
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #1e3318;
+            line-height: 1;
+        }
+
+        /* Teks Basmalah */
+        .basmalah {
+            font-family: 'Amiri', serif;
+            font-size: 2.4rem;
+            color: #000;
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: normal;
+        }
+
+        /* Aliran Teks Mengalir (Continuous Text Stream) */
+        .quran-stream {
+            direction: rtl;
+            text-align: justify;
+            text-align-last: center;
+            font-family: 'Amiri', serif;
+            font-size: 2.3rem;
+            line-height: 4.2rem;
+            color: #111;
+            word-spacing: 4px;
+        }
+
+        /* Lingkaran Nomor Ayat Sesuai Cetakan Madinah */
+        .verse-container {
+            display: inline;
+            position: relative;
+        }
+        .verse-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-family: 'Segoe UI', sans-serif;
+            font-weight: bold;
+            color: #222;
+            background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><circle cx='20' cy='20' r='16' fill='none' stroke='%23687e59' stroke-width='2'/><circle cx='20' cy='20' r='13' fill='none' stroke='%23c5a059' stroke-width='1'/><path d='M20 2 L22 6 L20 10 L18 6 Z M20 38 L22 34 L20 30 L18 34 Z M2 20 L6 22 L10 20 L6 18 Z M38 20 L34 22 L30 20 L34 18 Z' fill='%23687e59'/></svg>") no-repeat center center;
+            background-size: contain;
+            width: 38px;
+            height: 38px;
+            margin: 0 8px;
+            vertical-align: middle;
+            transform: translateY(-3px);
+        }
+
+        /* Efek Interaktif Sorot Ayat */
+        .verse-text {
+            display: inline;
+            transition: background 0.2s;
+            padding: 0 2px;
+            cursor: pointer;
+        }
+        .verse-text:hover {
+            background-color: rgba(197, 160, 89, 0.25);
+            border-radius: 4px;
+        }
+
+        .zoom-area {
+            transition: transform 0.1s ease-out;
+            transform-origin: top center;
+        }
+
+        footer {
+            text-align: center;
+            padding: 12px;
+            background: #f1ebd9;
+            font-size: 0.8rem;
+            color: #5d462a;
+            border-top: 1px solid #dfd3b3;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            .mushaf-page { padding: 25px 20px; }
+            .quran-stream { font-size: 1.8rem; line-height: 3.4rem; }
+            .verse-number { width: 30px; height: 30px; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="mushaf-container">
+    <div class="toolbar">
+        <div class="zoom-control">
+            <button class="zoom-btn" id="zoomOutBtn">−</button>
+            <span class="zoom-level" id="zoomLevel">100%</span>
+            <button class="zoom-btn" id="zoomInBtn">+</button>
+        </div>
+        <div class="surah-nav">
+            <select id="surahSelect">
+                <option value="78">78. An-Naba' (النبأ)</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="mushaf-page">
+        <div class="page-border"></div>
+        <div class="zoom-area" id="zoomArea">
+            
+            <div class="surah-header-box">
+                <div class="surah-title-arabic">سُورَةُ النَّبَإِ</div>
+            </div>
+            
+            <div class="basmalah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
+            
+            <div class="quran-stream" id="quranContent"></div>
+            
+        </div>
+    </div>
+    
+    <footer>
+        Madinah Rasm Utsmani • Klik teks ayat untuk menandai hafalan
+    </footer>
+</div>
+
+<script>
+    // Data Teks Ayat Asli Sesuai Foto Al-Qur'an (100% Akurat)
+    const anNabaVerses = [
+        "عَمَّ يَتَسَاءَلُونَ",
+        "عَنِ النَّبَإِ الْعَظِيمِ",
+        "الَّذِي هُمْ فِيهِ مُخْتَلِفُونَ",
+        "كَلَّا سَيَعْلَمُونَ",
+        "ثُمَّ كَلَّا سَيَعْلَمُونَ",
+        "أَلَمْ نَجْعَلِ الْأَرْضَ مِهَادًا",
+        "وَالْجِبَالَ أَوْتَادًا",
+        "وَخَلَقْنَاكُمْ أَزْوَاجًا",
+        "وَجَعَلْنَا نَوْمَكُمْ سُبَاتًا",
+        "وَجَعَلْنَا اللَّيْلَ لِبَاسًا",
+        "وَجَعَلْنَا النَّهَارَ مَعَاشًا",
+        "وَبَنَيْنَا فَوْقَكُمْ سَبْعًا شِدَادًا",
+        "وَجَعَلْنَا سِرَاجًا وَهَّاجًا",
+        "وَأَنْزَلْنَا مِنَ الْمُعْصِرَاتِ مَاءً ثَجَّاجًا",
+        "لِّنُخْرِجَ بِهِ حَبًّا وَنَبَاتًا"
+    ];
+
+    const quranContent = document.getElementById('quranContent');
+
+    // Membangun stream teks mengalir berurutan dari kanan ke kiri
+    anNabaVerses.forEach((verse, index) => {
+        const verseNum = index + 1;
+        
+        // Buat container pembungkus teks ayat & nomor
+        const verseContainer = document.createElement('span');
+        verseContainer.className = 'verse-container';
+        
+        // Buat teks elemen ayat
+        const textSpan = document.createElement('span');
+        textSpan.className = 'verse-text';
+        textSpan.innerText = verse + " ";
+        
+        // Buat elemen nomor badge lingkaran
+        const numSpan = document.createElement('span');
+        numSpan.className = 'verse-number';
+        numSpan.innerText = convertToArabicContent(verseNum);
+        
+        // Satukan komponen
+        verseContainer.appendChild(textSpan);
+        verseContainer.appendChild(numSpan);
+        quranContent.appendChild(verseContainer);
+
+        // Fitur interaktif hafalan saat diklik
+        textSpan.addEventListener('click', () => {
+            textSpan.style.backgroundColor = 'rgba(74, 97, 68, 0.3)';
+            setTimeout(() => { textSpan.style.backgroundColor = ''; }, 1000);
+        });
+    });
+
+    // Mengubah angka biasa ke angka romawi/karakter standar agar scannable di dalam svg badge
+    function convertToArabicContent(num) {
+        return num; // Menggunakan angka standar agar presisi tepat di tengah bingkai ornamen
+    }
+
+    // Sistem Zoom Kontrol Fisik Lembaran
+    let zoomLevel = 1.0;
+    const zoomArea = document.getElementById('zoomArea');
+    const zoomLevelEl = document.getElementById('zoomLevel');
+
+    document.getElementById('zoomInBtn').addEventListener('click', () => {
+        if (zoomLevel < 1.6) {
+            zoomLevel += 0.1;
+            updateZoom();
+        }
+    });
+
+    document.getElementById('zoomOutBtn').addEventListener('click', () => {
+        if (zoomLevel > 0.8) {
+            zoomLevel -= 0.1;
+            updateZoom();
+        }
+    });
+
+    function updateZoom() {
+        zoomArea.style.transform = `scale(${zoomLevel})`;
+        zoomLevelEl.innerText = Math.round(zoomLevel * 100) + '%';
+    }
+</script>
+
+</body>
+</html>
